@@ -47,13 +47,14 @@ can run `python3`, you can verify your agent's memory.
 ## Quick start (10 minutes)
 
 1. Install Obsidian (free): https://obsidian.md
-2. Unzip → Obsidian → "Open folder as vault". Daily notes and templates are
+2. Download the vault: [verified-memory-vault-v0.9.zip](https://github.com/secondbrainstarter/verified-memory-vault/releases/download/v0.9.0/verified-memory-vault-v0.9.zip) — or clone this repo.
+3. Unzip → Obsidian → "Open folder as vault". Daily notes and templates are
    preconfigured.
-3. (Recommended) Make it a git repo and install the guard:
+4. (Recommended) Make it a git repo and install the guard:
    `git init && ln -s ../../tools/memory_guard.py .git/hooks/pre-commit`
-4. Tell your agent to read `CLAUDE.md` at session start and to run
+5. Tell your agent to read `CLAUDE.md` at session start and to run
    `python3 tools/memory_check.py` once per session.
-5. End of session: fill the daily note, promote durable facts to `MEMORY.md`.
+6. End of session: fill the daily note, promote durable facts to `MEMORY.md`.
    That's the whole habit — and now it's verifiable.
 
 ## The three rules
