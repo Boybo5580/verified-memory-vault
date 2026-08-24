@@ -6,6 +6,8 @@ A small vault that gives AI coding agents (Claude Code, Codex, Gemini CLI, …)
 a **persistent memory** — and, unlike a bare folder structure, it **checks
 itself and protects itself**:
 
+![memory_check.py health check and memory_guard.py refusing a mass deletion commit](media/memory-check-demo.png)
+
 - `memory_check.py` scores the memory's health at any time: protocol
   violations, dead links, bloat, inbox pressure. One command, honest report.
 - `memory_guard.py` (optional git hook) refuses the commit that deletes your
