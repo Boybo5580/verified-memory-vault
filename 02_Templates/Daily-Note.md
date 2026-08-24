@@ -1,6 +1,5 @@
 ---
 type: agent-memory-log
-date: "{{date}}"
 tags:
   - memory/daily
 agent: ""
