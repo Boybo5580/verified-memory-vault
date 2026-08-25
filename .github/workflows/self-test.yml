@@ -1,0 +1,30 @@
+name: self-test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run stdlib-only self-test (exit codes 0/1/2)
+        run: |
+          chmod +x tools/memory_check.py tools/memory_guard.py
+          python3 tests/self_test.py
+
+      - name: Exec-bit sanity (hooks must stay 755)
+        run: |
+          test "$(stat -c %a tools/memory_check.py | tail -c 3)" = "755" || { echo "memory_check.py lost exec bit"; exit 1; }
+          test "$(stat -c %a tools/memory_guard.py | tail -c 3)" = "755" || { echo "memory_guard.py lost exec bit"; exit 1; }
