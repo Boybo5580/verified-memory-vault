@@ -76,6 +76,13 @@ Hook that into
 session shutdown or CI; the printed score is a dashboard for you, not a
 contract for machines.
 
+Verify your copy in one command (no dependencies, stdlib only):
+
+    python3 tests/self_test.py
+
+It builds throwaway vaults and asserts every risk class end-to-end:
+healthy → 0, hygiene defect → 1, undated/duplicated/near-duplicated → 2.
+
 ## The three rules
 
 1. **Capture, don't sort.** Everything lands in `00_Inbox/` first.
