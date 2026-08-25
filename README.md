@@ -45,9 +45,12 @@ can run `python3`, you can verify your agent's memory.
 - `tools/memory_check.py` — health check (score, problems, exit code).
   The score is telemetry for humans; the **exit code is the contract**,
   graded by risk class: 0 = healthy, 1 = degraded (hygiene defects like
-  dead links or bad note names), **2 = provenance breach** (undated or
-  duplicated memory entries — the memory can no longer be trusted about
-  *when* something was learned). Gate session-shutdown hooks or CI steps
+  dead links or bad note names), **2 = provenance breach** (undated,
+  duplicated, or near-duplicated memory entries — the memory can no longer
+  be trusted about *when* something was learned). Near-duplicate detection
+  compares date-stripped, stopword-filtered token sets: a fact re-captured
+  in different wording or with an added detail is flagged even though the
+  lines are not byte-identical. Gate session-shutdown hooks or CI steps
   on it; treat exit 2 as strictly worse than exit 1.
 - `tools/memory_guard.py` — git pre-commit guard against mass deletion
   (file count AND absolute removed-lines cap) and history rewrites of
@@ -68,7 +71,8 @@ can run `python3`, you can verify your agent's memory.
 
 Gate automation on exit codes, not scores: `memory_check.py` returns
 0 (healthy), 1 (degraded — hygiene defects) or 2 (provenance breach —
-undated/duplicated memory entries, the stricter class). Hook that into
+undated/duplicated/near-duplicated memory entries, the stricter class).
+Hook that into
 session shutdown or CI; the printed score is a dashboard for you, not a
 contract for machines.
 
