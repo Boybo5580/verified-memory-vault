@@ -82,8 +82,11 @@ Verify your copy in one command (no dependencies, stdlib only):
 
     python3 tests/self_test.py
 
-It builds throwaway vaults and asserts every risk class end-to-end:
-healthy → 0, hygiene defect → 1, undated/duplicated/near-duplicated → 2.
+It builds throwaway vaults and real throwaway git repos, then asserts both
+contracts end-to-end: healthy → 0, hygiene defect → 1,
+undated/duplicated/near-duplicated → 2 — plus every memory_guard refusal
+(mass deletion, history rewrite without archiving, removed-lines cap) and
+the legitimate paths (append, archive-and-trim) staying allowed.
 The same suite runs on every push via GitHub Actions
 ([latest run](https://github.com/secondbrainstarter/verified-memory-vault/actions/workflows/self-test.yml)).
 
