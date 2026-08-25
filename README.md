@@ -42,9 +42,13 @@ can run `python3`, you can verify your agent's memory.
 - `01_Daily/` — one note per session: work done, decisions, blockers
 - `00_Inbox/` — capture everything; sort later
 - `02_Templates/` — daily note templates (EN + DE)
-- `tools/memory_check.py` — health check (score, problems, exit code)
+- `tools/memory_check.py` — health check (score, problems, exit code).
+  The score is telemetry for humans; the **exit code is the contract**:
+  gate session-shutdown hooks or CI steps on it (0 = healthy, 1 = degraded),
+  not on the score.
 - `tools/memory_guard.py` — git pre-commit guard against mass deletion
-  and history rewrites of MEMORY.md
+  (file count AND absolute removed-lines cap) and history rewrites of
+  MEMORY.md
 
 ## Quick start (10 minutes)
 
@@ -58,6 +62,10 @@ can run `python3`, you can verify your agent's memory.
    `python3 tools/memory_check.py` once per session.
 6. End of session: fill the daily note, promote durable facts to `MEMORY.md`.
    That's the whole habit — and now it's verifiable.
+
+Gate automation on exit codes, not scores: `memory_check.py` returns 0
+(healthy) or 1 (degraded) — hook that into session shutdown or CI. The
+printed score is a dashboard for you, not a contract for machines.
 
 ## The three rules
 

@@ -4,7 +4,10 @@
 Protects the agent's own memory from accidental mass damage:
 
   1. Mass deletion: refuses a commit that deletes more than
-     --max-deletions (default 3) memory files at once.
+     --max-deletions (default 3) memory files at once, or removes more
+     than --max-deleted-lines (default 10) lines from memory files in
+     one commit — the absolute cap catches small vaults where a
+     proportionally "small" deletion is still fatal.
   2. History rewrite of MEMORY.md: the protocol is append-only. A commit
      that REMOVES lines from MEMORY.md (other than pure whitespace or
      entries moved to MEMORY-Archive.md in the same commit) is refused.
@@ -57,6 +60,10 @@ def staged_changes(numstat: str):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--max-deletions", type=int, default=3)
+    ap.add_argument(
+        "--max-deleted-lines", type=int, default=10,
+        help="absolute cap on removed lines from memory files per commit",
+    )
     args = ap.parse_args()
 
     # Not inside a git repo -> nothing to guard.
@@ -67,6 +74,7 @@ def main() -> int:
 
     memory_files_deleted = []
     memory_lines_removed = 0
+    memory_lines_removed_files = []
     archive_updated = any(
         PROTECTED_HINT.lower() in p.lower() for p, _, _ in staged_changes(numstat)
     )
@@ -81,9 +89,10 @@ def main() -> int:
         # Whole-file deletions of memory files.
         if dels > 0 and adds == 0 and is_memory:
             memory_files_deleted.append(path)
-        # Line removals inside MEMORY.md itself.
-        if name == "MEMORY.md" and dels > 0:
+        # Line removals inside memory files (absolute-cap accounting).
+        if is_memory and dels > 0:
             memory_lines_removed += dels
+            memory_lines_removed_files.append(path)
 
     problems = []
 
@@ -99,6 +108,14 @@ def main() -> int:
             f"{memory_lines_removed} line(s) removed from MEMORY.md but "
             f"{PROTECTED_HINT} was not updated in the same commit. The protocol "
             "is append-only: move old entries to MEMORY-Archive.md, don't delete."
+        )
+
+    if memory_lines_removed > args.max_deleted_lines:
+        problems.append(
+            f"{memory_lines_removed} line(s) removed from memory files in one "
+            f"commit (absolute limit {args.max_deleted_lines}): "
+            f"{sorted(set(memory_lines_removed_files))}. If this is "
+            "intentional, commit with --no-verify after double-checking."
         )
 
     if problems:
