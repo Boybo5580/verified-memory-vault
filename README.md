@@ -43,9 +43,12 @@ can run `python3`, you can verify your agent's memory.
 - `00_Inbox/` — capture everything; sort later
 - `02_Templates/` — daily note templates (EN + DE)
 - `tools/memory_check.py` — health check (score, problems, exit code).
-  The score is telemetry for humans; the **exit code is the contract**:
-  gate session-shutdown hooks or CI steps on it (0 = healthy, 1 = degraded),
-  not on the score.
+  The score is telemetry for humans; the **exit code is the contract**,
+  graded by risk class: 0 = healthy, 1 = degraded (hygiene defects like
+  dead links or bad note names), **2 = provenance breach** (undated or
+  duplicated memory entries — the memory can no longer be trusted about
+  *when* something was learned). Gate session-shutdown hooks or CI steps
+  on it; treat exit 2 as strictly worse than exit 1.
 - `tools/memory_guard.py` — git pre-commit guard against mass deletion
   (file count AND absolute removed-lines cap) and history rewrites of
   MEMORY.md
@@ -63,9 +66,11 @@ can run `python3`, you can verify your agent's memory.
 6. End of session: fill the daily note, promote durable facts to `MEMORY.md`.
    That's the whole habit — and now it's verifiable.
 
-Gate automation on exit codes, not scores: `memory_check.py` returns 0
-(healthy) or 1 (degraded) — hook that into session shutdown or CI. The
-printed score is a dashboard for you, not a contract for machines.
+Gate automation on exit codes, not scores: `memory_check.py` returns
+0 (healthy), 1 (degraded — hygiene defects) or 2 (provenance breach —
+undated/duplicated memory entries, the stricter class). Hook that into
+session shutdown or CI; the printed score is a dashboard for you, not a
+contract for machines.
 
 ## The three rules
 

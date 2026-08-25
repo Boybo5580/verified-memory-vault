@@ -57,10 +57,11 @@ Three folders, one daily note per session, one memory file:
 
 Run `python3 tools/memory_check.py` once per session. It verifies the
 memory is healthy: dated entries only, no duplicates, no dead wikilinks,
-MEMORY.md within its budget. If it reports problems, fix them before
-appending new entries. If this vault is a git repo with the pre-commit
-guard installed (`tools/_README.md`), accidental mass deletions are
-refused automatically.
+MEMORY.md within its budget. Exit codes: 0 healthy, 1 degraded (hygiene),
+2 provenance breach (undated/duplicated entries — fix first). If it
+reports problems, fix them before appending new entries. If this vault is
+a git repo with the pre-commit guard installed (`tools/_README.md`),
+accidental mass deletions are refused automatically.
 
 ---
 

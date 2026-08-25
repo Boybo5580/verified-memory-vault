@@ -13,6 +13,17 @@ Checks:
   4. No empty notes; all files UTF-8 readable.
   5. Inbox size warning (capture without sorting).
 
+Risk classes / exit codes:
+  0  HEALTHY            no defects
+  1  DEGRADED           hygiene defects (dead links, naming, budget…)
+  2  PROVENANCE BREACH  undated or duplicated memory entries — the memory
+                        can no longer be trusted about *when* something was
+                        learned; treat as strictly worse than hygiene.
+
+Provenance defects are the stricter class because every downstream consumer
+(session boot, CI, shutdown hooks) relies on dated, non-duplicated entries;
+a dead link is visible, silent provenance rot is not.
+
 Standard library only. Python 3.8+.
 """
 
@@ -56,7 +67,7 @@ def _entry_text(line: str) -> str:
     return line.lstrip().lstrip("-*").strip()
 
 
-def check_memory_md(root: Path, problems, warnings):
+def check_memory_md(root: Path, problems, warnings, provenance):
     mem = root / "MEMORY.md"
     if not mem.exists():
         problems.append("MEMORY.md missing (the durable memory file)")
@@ -74,7 +85,7 @@ def check_memory_md(root: Path, problems, warnings):
         )
     bad = [ln for ln in body if _is_entry_line(ln) and not ENTRY_RE.match(_entry_text(ln))]
     if bad:
-        problems.append(
+        provenance.append(
             f"{len(bad)} MEMORY.md entry line(s) without a date "
             f"(format 'YYYY-MM-DD: fact'), e.g. {bad[0]!r}"
         )
@@ -89,7 +100,7 @@ def check_memory_md(root: Path, problems, warnings):
         elif key:
             seen.add(key)
     if dups:
-        problems.append(f"{len(dups)} duplicate MEMORY.md entr(ies), e.g. {dups[0]!r}")
+        provenance.append(f"{len(dups)} duplicate MEMORY.md entr(ies), e.g. {dups[0]!r}")
 
 
 def check_daily_notes(root: Path, problems):
@@ -146,27 +157,44 @@ def check_inbox(root: Path, warnings):
 
 def main() -> int:
     root = find_vault_root()
-    problems, warnings = [], []
+    problems, warnings, provenance = [], [], []
 
-    check_memory_md(root, problems, warnings)
+    check_memory_md(root, problems, warnings, provenance)
     check_daily_notes(root, problems)
     notes = collect_vault_notes(root)
     check_wikilinks(root, notes, problems, warnings)
     check_inbox(root, warnings)
 
-    score = max(0, 100 - len(problems) * 20 - min(len(warnings), 5) * 2)
+    score = max(0, 100 - (len(problems) + len(provenance)) * 20
+                - min(len(warnings), 5) * 2)
     print(f"Verified Memory Vault — health check {datetime.now():%Y-%m-%d %H:%M}")
     print(f"Notes scanned: {len(notes)}")
     print(f"Health score: {score}/100")
+    for p in provenance:
+        print(f"  PROVENANCE BREACH: {p}")
     for p in problems:
         print(f"  PROBLEM: {p}")
     for w in warnings:
         print(f"  warn:    {w}")
-    if not problems and not warnings:
+    if not problems and not warnings and not provenance:
         print("  All checks passed.")
-    verdict = "HEALTHY" if not problems else "UNHEALTHY"
-    print(f"Verdict: {verdict}")
-    return 0 if not problems else 1
+    if provenance:
+        verdict = "PROVENANCE BREACH"
+        code = 2
+    elif problems:
+        verdict = "UNHEALTHY"
+        code = 1
+    else:
+        verdict = "HEALTHY"
+        code = 0
+    print(f"Verdict: {verdict} (exit code {code})")
+    # Exit-code contract (risk classes):
+    #   0 = HEALTHY            no defects at all
+    #   1 = DEGRADED           hygiene defects only (dead links, naming, …)
+    #   2 = PROVENANCE BREACH  undated/duplicated memory entries — stricter,
+    #                          because the memory can no longer be trusted
+    #                          about when facts were learned.
+    return 2 if provenance else (1 if problems else 0)
 
 
 if __name__ == "__main__":
