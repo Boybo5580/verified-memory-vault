@@ -3,17 +3,24 @@
 
 Run from anywhere:  python3 tests/self_test.py
 (or: make it executable). Stdlib only, no pytest required. Builds tiny
-synthetic vaults in a temporary directory and asserts the risk-classed exit
-codes:
+synthetic vaults (and, for the guard cases, real temporary git repos) and
+asserts both contracts:
 
+memory_check.py risk-classed exit codes:
     0 = HEALTHY            no defects
     1 = DEGRADED           hygiene defects only
     2 = PROVENANCE BREACH  undated / duplicated / near-duplicated entries
+
+memory_guard.py pre-commit refusals:
+    mass deletion, MEMORY.md history rewrite without archiving,
+    absolute removed-lines cap — and the legitimate paths
+    (plain append, archive-and-trim) stay allowed.
 
 Exit code of this script: 0 if every case passes, 1 otherwise.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -21,6 +28,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent.parent / "tools"
 CHECK = TOOLS / "memory_check.py"
+GUARD = TOOLS / "memory_guard.py"
 
 MINIMAL_VAULT = {
     "MEMORY.md": "# Memory\n\n- 2026-08-25: User prefers plain-text notes.\n",
@@ -127,6 +135,122 @@ def _t_distinct():
                       "- 2026-08-25: Release notes are written on Sundays.\n")
     code, out = run_check_on(build_vault(overrides=v))
     assert code == 0, (code, out)
+
+
+# --- memory_guard.py: pre-commit refusals on a real temporary git repo ----
+
+GUARD_BASE_MEMORY = ("# Memory\n\n"
+                     + "".join(
+                         f"- 2026-08-{d:02d}: Fact number {d} is durable.\n"
+                         for d in range(1, 16)))
+
+
+def build_git_vault(memory=GUARD_BASE_MEMORY, daily_files=3):
+    """A real git repo with an initialized vault and one baseline commit."""
+    root = Path(tempfile.mkdtemp(prefix="vmv-guardtest-"))
+    (root / "00_Inbox").mkdir()
+    (root / "01_Daily").mkdir()
+    (root / "MEMORY.md").write_text(memory, encoding="utf-8")
+    for d in range(1, daily_files + 1):
+        (root / f"01_Daily/2026-{'08'}-{d:02d}.md").write_text(
+            "\n".join(f"Session note line {i}." for i in range(1, 6)) + "\n",
+            encoding="utf-8")
+    git(root, "init", "-q", "-b", "main")
+    git(root, "config", "user.email", "test@example.com")
+    git(root, "config", "user.name", "Self Test")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "baseline vault")
+    return root
+
+
+def git(root, *args):
+    r = subprocess.run(["git"] + list(args), cwd=str(root),
+                       capture_output=True, text=True)
+    assert r.returncode == 0, (args, r.stderr)
+    return r.stdout
+
+
+def stage_and_guard(root, extra_args=()):
+    """Stage everything, then run memory_guard.py against the index."""
+    git(root, "add", "-A")
+    r = subprocess.run([sys.executable, str(GUARD), *extra_args],
+                       cwd=str(root), capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+@case("guard: plain append is allowed -> exit 0")
+def _g_append_ok():
+    root = build_git_vault()
+    try:
+        with open(root / "MEMORY.md", "a", encoding="utf-8") as f:
+            f.write("- 2026-08-25: New fact appended by session.\n")
+        code, out = stage_and_guard(root)
+        assert code == 0, (code, out)
+        assert "ok" in out
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+@case("guard: mass file deletion refused -> exit 1")
+def _g_mass_delete():
+    root = build_git_vault(daily_files=5)
+    try:
+        for d in range(1, 6):
+            os.remove(root / f"01_Daily/2026-08-{d:02d}.md")
+        code, out = stage_and_guard(root)
+        assert code == 1, (code, out)
+        assert "REFUSED" in out
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+@case("guard: MEMORY.md rewrite without archive refused -> exit 1")
+def _g_history_rewrite():
+    root = build_git_vault()
+    try:
+        lines = GUARD_BASE_MEMORY.splitlines(keepends=True)
+        trimmed = "".join(lines[:10])  # silently drop the older half
+        (root / "MEMORY.md").write_text(trimmed, encoding="utf-8")
+        code, out = stage_and_guard(root)
+        assert code == 1, (code, out)
+        assert "append-only" in out or "MEMORY-Archive" in out
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+@case("guard: absolute removed-lines cap refused even with archive touched")
+def _g_absolute_cap():
+    root = build_git_vault(daily_files=4)
+    try:
+        # Archive exists in the same commit, but far too many daily-note
+        # lines are deleted at once -> absolute cap must still fire.
+        arch = root / "MEMORY-Archive.md"
+        arch.write_text("# Archive\n\nmoved entries.\n", encoding="utf-8")
+        for d in range(1, 5):
+            (root / f"01_Daily/2026-08-{d:02d}.md").write_text(
+                "\n".join(f"line {i}" for i in range(1, 6)) + "\n",
+                encoding="utf-8")
+        code, out = stage_and_guard(root, ("--max-deletions", "10"))
+        assert code == 1, (code, out)
+        assert "absolute limit" in out
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+@case("guard: legitimate archive-and-trim commit allowed -> exit 0")
+def _g_archive_path_ok():
+    root = build_git_vault()
+    try:
+        lines = GUARD_BASE_MEMORY.splitlines(keepends=True)
+        kept = "".join(lines[:7])
+        moved = [ln for ln in lines[7:] if ln.startswith("- ")]
+        (root / "MEMORY.md").write_text(kept, encoding="utf-8")
+        with open(root / "MEMORY-Archive.md", "w", encoding="utf-8") as f:
+            f.write("# Memory Archive\n\n" + "".join(moved))
+        code, out = stage_and_guard(root)
+        assert code == 0, (code, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 def main():
