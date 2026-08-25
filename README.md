@@ -1,5 +1,7 @@
 # Verified Memory Vault — A Self-Checking Obsidian Vault for AI Coding Agents
 
+[![self-test](https://github.com/secondbrainstarter/verified-memory-vault/actions/workflows/self-test.yml/badge.svg)](https://github.com/secondbrainstarter/verified-memory-vault/actions/workflows/self-test.yml)
+
 **Free · Obsidian vault · Persistent memory for agents that proves it works**
 
 A small vault that gives AI coding agents (Claude Code, Codex, Gemini CLI, …)
@@ -82,6 +84,8 @@ Verify your copy in one command (no dependencies, stdlib only):
 
 It builds throwaway vaults and asserts every risk class end-to-end:
 healthy → 0, hygiene defect → 1, undated/duplicated/near-duplicated → 2.
+The same suite runs on every push via GitHub Actions
+([latest run](https://github.com/secondbrainstarter/verified-memory-vault/actions/workflows/self-test.yml)).
 
 ## The three rules
 
